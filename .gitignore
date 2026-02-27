@@ -1,0 +1,10 @@
+.idea/
+*.exe
+*.test
+*.prof
+*.xlsx
+*.docx
+*.pdf
+# EXCEPT the ones in the repo if there are any
+!README.md
+!LICENSE
