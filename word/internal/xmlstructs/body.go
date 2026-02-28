@@ -11,9 +11,36 @@ type Body struct {
 
 // SectPr defines section properties
 type SectPr struct {
-	XMLName xml.Name `xml:"w:sectPr"`
-	PgSz    *PgSz    `xml:"w:pgSz,omitempty"`
-	PgMar   *PgMar   `xml:"w:pgMar,omitempty"`
+	XMLName    xml.Name          `xml:"w:sectPr"`
+	HeaderRefs []HeaderReference `xml:"w:headerReference,omitempty"`
+	FooterRefs []FooterReference `xml:"w:footerReference,omitempty"`
+	PgSz       *PgSz             `xml:"w:pgSz,omitempty"`
+	PgMar      *PgMar            `xml:"w:pgMar,omitempty"`
+	PgNumType  *PgNumType        `xml:"w:pgNumType,omitempty"`
+	Cols       *Columns          `xml:"w:cols,omitempty"`
+	DocGrid    *DocGrid          `xml:"w:docGrid,omitempty"`
+	TitlePg    *TitlePg          `xml:"w:titlePg,omitempty"`
+}
+
+type TitlePg struct {
+	Val string `xml:"w:val,attr,omitempty"`
+}
+
+type PgNumType struct {
+	XMLName xml.Name `xml:"w:pgNumType"`
+	Start   int      `xml:"w:start,attr,omitempty"`
+	Fmt     string   `xml:"w:fmt,attr,omitempty"`
+}
+
+type Columns struct {
+	XMLName xml.Name `xml:"w:cols"`
+	Num     int      `xml:"w:num,attr,omitempty"`
+	Space   int      `xml:"w:space,attr,omitempty"`
+}
+
+type DocGrid struct {
+	XMLName   xml.Name `xml:"w:docGrid"`
+	LinePitch int      `xml:"w:linePitch,attr,omitempty"`
 }
 
 // PgSz defines page size and orientation

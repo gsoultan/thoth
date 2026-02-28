@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"os"
 
 	"github.com/gsoultan/thoth/core"
@@ -11,6 +14,9 @@ import (
 )
 
 func main() {
+	// Ensure test image exists for the example
+	ensureTestImage()
+
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	thoth := core.New(logger)
 	ctx := context.Background()
@@ -97,4 +103,30 @@ func main() {
 	} else {
 		logger.Info().Msg("Successfully saved final_output.pdf")
 	}
+}
+
+func ensureTestImage() {
+	const path = "test.png"
+	if _, err := os.Stat(path); err == nil {
+		return
+	}
+
+	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	// Create a blue square with a border
+	for y := 0; y < 100; y++ {
+		for x := 0; x < 100; x++ {
+			c := color.RGBA{0, 122, 255, 255} // Blue
+			if x < 5 || x > 94 || y < 5 || y > 94 {
+				c = color.RGBA{0, 0, 0, 255} // Black border
+			}
+			img.Set(x, y, c)
+		}
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_ = png.Encode(f, img)
 }

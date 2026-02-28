@@ -4,12 +4,24 @@ import "encoding/xml"
 
 // Styles defines the structure of xl/styles.xml
 type Styles struct {
-	XMLName xml.Name `xml:"http://schemas.openxmlformats.org/spreadsheetml/2006/main styleSheet"`
-	NumFmts *NumFmts `xml:"numFmts,omitempty"`
-	Fonts   Fonts    `xml:"fonts"`
-	Fills   Fills    `xml:"fills"`
-	Borders Borders  `xml:"borders"`
-	CellXfs CellXfs  `xml:"cellXfs"`
+	XMLName      xml.Name      `xml:"http://schemas.openxmlformats.org/spreadsheetml/2006/main styleSheet"`
+	NumFmts      *NumFmts      `xml:"numFmts,omitempty"`
+	Fonts        Fonts         `xml:"fonts"`
+	Fills        Fills         `xml:"fills"`
+	Borders      Borders       `xml:"borders"`
+	CellStyleXfs *CellStyleXfs `xml:"cellStyleXfs,omitempty"`
+	CellXfs      CellXfs       `xml:"cellXfs"`
+	Dxfs         *Dxfs         `xml:"dxfs,omitempty"`
+}
+
+type Dxfs struct {
+	Count int  `xml:"count,attr"`
+	Items []Xf `xml:"xf"`
+}
+
+type CellStyleXfs struct {
+	Count int  `xml:"count,attr"`
+	Items []Xf `xml:"xf"`
 }
 
 type NumFmts struct {
@@ -24,25 +36,19 @@ type NumFmt struct {
 
 // AddFont adds a font and returns its index
 func (s *Styles) AddFont(font Font) int {
-	for i, f := range s.Fonts.Items {
-		if f.equals(font) {
-			return i
-		}
-	}
 	s.Fonts.Items = append(s.Fonts.Items, font)
-	s.Fonts.Count++
+	s.Fonts.Count = len(s.Fonts.Items)
 	return len(s.Fonts.Items) - 1
 }
 
 // AddXf adds a cell format and returns its index
 func (s *Styles) AddXf(xf Xf) int {
-	for i, x := range s.CellXfs.Items {
-		if x.equals(xf) {
-			return i
-		}
+	if xf.XfID == nil {
+		zero := 0
+		xf.XfID = &zero
 	}
 	s.CellXfs.Items = append(s.CellXfs.Items, xf)
-	s.CellXfs.Count++
+	s.CellXfs.Count = len(s.CellXfs.Items)
 	return len(s.CellXfs.Items) - 1
 }
 
@@ -50,6 +56,7 @@ func (s *Styles) AddNumFmt(formatCode string) int {
 	if s.NumFmts == nil {
 		s.NumFmts = &NumFmts{Count: 0, Items: make([]NumFmt, 0)}
 	}
+	// Check for existing custom number formats
 	for _, nf := range s.NumFmts.Items {
 		if nf.FormatCode == formatCode {
 			return nf.NumFmtID
@@ -68,103 +75,72 @@ func (s *Styles) AddNumFmt(formatCode string) int {
 }
 
 func (s *Styles) AddFill(fill Fill) int {
-	for i, f := range s.Fills.Items {
-		if f.equals(fill) {
-			return i
-		}
-	}
 	s.Fills.Items = append(s.Fills.Items, fill)
-	s.Fills.Count++
+	s.Fills.Count = len(s.Fills.Items)
 	return len(s.Fills.Items) - 1
 }
 
 func (s *Styles) AddBorder(border Border) int {
-	for i, b := range s.Borders.Items {
-		if b.equals(border) {
-			return i
-		}
-	}
 	s.Borders.Items = append(s.Borders.Items, border)
-	s.Borders.Count++
+	s.Borders.Count = len(s.Borders.Items)
 	return len(s.Borders.Items) - 1
 }
 
-func (f Font) equals(other Font) bool {
-	if (f.Bold == nil) != (other.Bold == nil) {
-		return false
+func (s *Styles) AddDxf(xf Xf) int {
+	if s.Dxfs == nil {
+		s.Dxfs = &Dxfs{Items: make([]Xf, 0)}
 	}
-	if (f.Italic == nil) != (other.Italic == nil) {
-		return false
-	}
-	if (f.Size == nil) != (other.Size == nil) {
-		return false
-	}
-	if f.Size != nil && f.Size.Val != other.Size.Val {
-		return false
-	}
-	if (f.Color == nil) != (other.Color == nil) {
-		return false
-	}
-	if f.Color != nil && f.Color.RGB != other.Color.RGB {
-		return false
-	}
-	return true
+	s.Dxfs.Items = append(s.Dxfs.Items, xf)
+	s.Dxfs.Count = len(s.Dxfs.Items)
+	return len(s.Dxfs.Items) - 1
 }
 
-func (f Fill) equals(other Fill) bool {
-	if (f.PatternFill == nil) != (other.PatternFill == nil) {
-		return false
+// NewDefaultStyles creates a new instance of Styles with mandatory defaults.
+func NewDefaultStyles() *Styles {
+	zero := 0
+	return &Styles{
+		Fonts: Fonts{
+			Count: 1,
+			Items: []Font{
+				{
+					Size: &ValInt{Val: 11},
+					Name: &ValString{Val: "Calibri"},
+				},
+			},
+		},
+		Fills: Fills{
+			Count: 2,
+			Items: []Fill{
+				{PatternFill: &PatternFill{PatternType: "none"}},
+				{PatternFill: &PatternFill{PatternType: "gray125"}},
+			},
+		},
+		Borders: Borders{
+			Count: 1,
+			Items: []Border{{}},
+		},
+		CellStyleXfs: &CellStyleXfs{
+			Count: 1,
+			Items: []Xf{
+				{
+					NumFmtID: 0,
+					FontID:   0,
+					FillID:   0,
+					BorderID: 0,
+				},
+			},
+		},
+		CellXfs: CellXfs{
+			Count: 1,
+			Items: []Xf{
+				{
+					NumFmtID: 0,
+					FontID:   0,
+					FillID:   0,
+					BorderID: 0,
+					XfID:     &zero,
+				},
+			},
+		},
 	}
-	if f.PatternFill != nil {
-		if f.PatternFill.PatternType != other.PatternFill.PatternType {
-			return false
-		}
-		if (f.PatternFill.FgColor == nil) != (other.PatternFill.FgColor == nil) {
-			return false
-		}
-		if f.PatternFill.FgColor != nil && f.PatternFill.FgColor.RGB != other.PatternFill.FgColor.RGB {
-			return false
-		}
-	}
-	return true
-}
-
-func (b Border) equals(other Border) bool {
-	checkEdge := func(e1, e2 *BorderEdge) bool {
-		if (e1 == nil) != (e2 == nil) {
-			return false
-		}
-		if e1 != nil && e1.Style != e2.Style {
-			return false
-		}
-		return true
-	}
-	return checkEdge(b.Left, other.Left) &&
-		checkEdge(b.Right, other.Right) &&
-		checkEdge(b.Top, other.Top) &&
-		checkEdge(b.Bottom, other.Bottom)
-}
-
-func (x Xf) equals(other Xf) bool {
-	if x.NumFmtID != other.NumFmtID ||
-		x.FontID != other.FontID ||
-		x.FillID != other.FillID ||
-		x.BorderID != other.BorderID ||
-		x.ApplyNumberFormat != other.ApplyNumberFormat ||
-		x.ApplyFont != other.ApplyFont ||
-		x.ApplyFill != other.ApplyFill ||
-		x.ApplyBorder != other.ApplyBorder ||
-		x.ApplyAlignment != other.ApplyAlignment {
-		return false
-	}
-	if (x.Alignment == nil) != (other.Alignment == nil) {
-		return false
-	}
-	if x.Alignment != nil {
-		if x.Alignment.Horizontal != other.Alignment.Horizontal ||
-			x.Alignment.Vertical != other.Alignment.Vertical {
-			return false
-		}
-	}
-	return true
 }

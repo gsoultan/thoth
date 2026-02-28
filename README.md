@@ -19,10 +19,18 @@ A modern, extensible Go library (Go 1.26+) for high-performance processing of Mi
 - Create new spreadsheets or open existing ones.
 - Scoped sheet handles for clean, chainable operations.
 - Cell value setting (strings, numbers, dates).
+- **Rich Text support**: Multiple styles within a single cell using `TextSpan`.
+- **Data Validation**: Dropdown lists and input validation.
+- **Conditional Formatting**: Rules-based cell styling (e.g., cellIs > 0).
+- **Excel Tables (ListObjects)**: Create structured data tables with automatic headers, filtering, and styling.
+- **Workbook & Sheet Protection**: Secure your documents with passwords.
+- **Advanced Layout**: Page setup (margins, orientation, paper size), header/footer, and row/column grouping (outlining).
+- **Print Settings**: Define custom Print Area and Print Titles (repeating rows/columns).
 - Advanced styling: bold, italic, colors, borders, and number formats.
 - Column width management and cell merging.
 - AutoFilter and Freeze Panes.
 - **Image insertion** into worksheets.
+- **$O(1)$ Lookup performance** for styles, shared strings, and cells using indexing and caching.
 
 ### 📝 Word (.docx)
 - Paragraph-based content addition with full styling support.
@@ -83,8 +91,12 @@ func main() {
 
 The `examples/` directory contains comprehensive usage samples:
 - `examples/main.go`: General overview of Excel, Word, and PDF features.
+- `examples/excel_features/main.go`: Demonstrates Rich Text, Data Validation, and Conditional Formatting.
+- `examples/excel_advanced_production/main.go`: Showcases Page Setup, Protection, Grouping, and Header/Footer.
+- `examples/excel_advanced_v2/main.go`: Advanced reporting with Excel Tables, Print Area, and repeating Print Titles.
 - `examples/pdf_complex/main.go`: Advanced PDF features including headers, footers, and shapes.
 - `examples/pdf_production/main.go`: Production-ready PDF features: compression, bookmarks, hyperlinks, and pagination.
+- `examples/pdf_final/main.go`: The ultimate PDF demonstration including advanced tables (multi-item cells, wrapping text, repeating headers) and image positioning.
 
 ## Project Structure
 

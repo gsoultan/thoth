@@ -10,5 +10,8 @@ type Document struct {
 	WP      string   `xml:"xmlns:wp,attr"`
 	A       string   `xml:"xmlns:a,attr"`
 	Pic     string   `xml:"xmlns:pic,attr"`
+	O       string   `xml:"xmlns:o,attr,omitempty"`
+	V       string   `xml:"xmlns:v,attr,omitempty"`
+	W10     string   `xml:"xmlns:w10,attr,omitempty"`
 	Body    Body     `xml:"w:body"`
 }

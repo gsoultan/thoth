@@ -28,5 +28,8 @@ func (w *metadata) SetMetadata(metadata document.Metadata) error {
 	w.coreProperties.Creator = metadata.Author
 	w.coreProperties.Subject = metadata.Subject
 	w.coreProperties.Description = metadata.Description
+	if metadata.Company != "" {
+		w.appProperties.Company = metadata.Company
+	}
 	return nil
 }

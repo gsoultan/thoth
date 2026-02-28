@@ -6,4 +6,6 @@ type PageMargins struct {
 	Right  float64 `xml:"right,attr"`
 	Top    float64 `xml:"top,attr"`
 	Bottom float64 `xml:"bottom,attr"`
+	Header float64 `xml:"header,attr"`
+	Footer float64 `xml:"footer,attr"`
 }

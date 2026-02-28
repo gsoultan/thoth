@@ -9,4 +9,6 @@ type Object interface {
 	String() string
 	// WriteTo writes the PDF representation to the writer.
 	WriteTo(w io.Writer) (int64, error)
+	// WriteEncrypted writes the PDF representation to the writer, encrypted if needed.
+	WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error)
 }

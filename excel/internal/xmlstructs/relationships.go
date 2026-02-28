@@ -41,3 +41,25 @@ func (r *Relationships) AddRelationship(relType, target string) string {
 	})
 	return newID
 }
+
+// AddRelationshipMode adds a new relationship with TargetMode and returns its ID
+func (r *Relationships) AddRelationshipMode(relType, target, mode string) string {
+	maxID := 0
+	for _, rel := range r.Rels {
+		if len(rel.ID) > 3 && rel.ID[:3] == "rId" {
+			var id int
+			fmt.Sscanf(rel.ID, "rId%d", &id)
+			if id > maxID {
+				maxID = id
+			}
+		}
+	}
+	newID := fmt.Sprintf("rId%d", maxID+1)
+	r.Rels = append(r.Rels, Relationship{
+		ID:         newID,
+		Type:       relType,
+		Target:     target,
+		TargetMode: mode,
+	})
+	return newID
+}

@@ -52,9 +52,8 @@ func (p *Parser) ParseObject() (objects.Object, error) {
 		val, _ := strconv.Atoi(tok.Value)
 		return objects.Integer(val), nil
 	case TokenFloat:
-		// We don't have a Float object yet, using Integer or implementing one
 		val, _ := strconv.ParseFloat(tok.Value, 64)
-		return objects.Integer(int(val)), nil // Simplified
+		return objects.Float(val), nil
 	case TokenName:
 		return objects.Name(tok.Value), nil
 	case TokenString:
@@ -88,10 +87,10 @@ func (p *Parser) ParseObject() (objects.Object, error) {
 		return dict, nil
 	case TokenKeyword:
 		if tok.Value == "true" {
-			return objects.Integer(1), nil // Simplified
+			return objects.Boolean(true), nil
 		}
 		if tok.Value == "false" {
-			return objects.Integer(0), nil // Simplified
+			return objects.Boolean(false), nil
 		}
 		if tok.Value == "null" {
 			return nil, nil

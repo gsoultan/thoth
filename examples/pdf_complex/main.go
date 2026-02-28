@@ -41,19 +41,29 @@ func main() {
 	_ = pdf.DrawRect(50, 750, 495, 2, document.NewCellStyleBuilder().Background("4F81BD").Build()) // Line under header
 
 	// 4. Content
-	titleStyle := document.NewCellStyleBuilder().Bold().Size(18).Align("center", "center").Build()
+	titleStyle := document.NewCellStyleBuilder().Bold().Size(18).Align("center", "center").SpacingAfter(20).Build()
 	_ = pdf.AddParagraph("Real-World PDF Scenario", titleStyle)
-	_ = pdf.AddParagraph("This document demonstrates advanced PDF features including headers, footers, table cell merging, shapes, and complex layouts.", document.NewCellStyleBuilder().Italic().Size(11).Build())
+
+	_ = pdf.AddParagraph("This document demonstrates advanced PDF features including headers, footers, table cell merging, shapes, and complex layouts.", document.NewCellStyleBuilder().Italic().Size(11).LineSpacing(1.5).SpacingAfter(10).Build())
+
+	_ = pdf.AddParagraph("New features in this version:\n• Multiline paragraphs with custom line spacing\n• Standalone and nested lists\n• Space before and after paragraphs", document.NewCellStyleBuilder().Size(10).Color("666666").SpacingAfter(15).Build())
+
+	_ = pdf.AddParagraph("Projects Overview List:", document.NewCellStyleBuilder().Bold().Size(12).Build())
+	_ = pdf.AddList([]string{
+		"Project Alpha: Initial phase completed",
+		"Project Beta: Development in progress",
+		"Project Gamma: Planning stage",
+	}, false, document.NewCellStyleBuilder().Size(11).SpacingAfter(2).Build())
 
 	// 5. Complex Table with Merged Cells
-	_ = pdf.AddParagraph("Table 1: Project Resource Allocation", document.NewCellStyleBuilder().Bold().Size(12).Build())
+	_ = pdf.AddParagraph("\nTable 1: Project Resource Allocation", document.NewCellStyleBuilder().Bold().Size(12).SpacingBefore(20).SpacingAfter(5).Build())
 	if tbl, err := pdf.AddTable(5, 4); err == nil {
 		hStyle := document.NewCellStyleBuilder().Bold().Background("D9D9D9").Border().Align("center", "center").Build()
 
 		// Header Row with spanning
 		_ = tbl.MergeCells(0, 0, 1, 2)
 		tbl.Row(0).Cell(0).AddParagraph("Project Details").Style(hStyle)
-		tbl.Row(0).Cell(2).AddParagraph("Resource").Style(hStyle)
+		tbl.Row(0).Cell(2).AddParagraph("Resources & Tasks").Style(hStyle)
 		tbl.Row(0).Cell(3).AddParagraph("Status").Style(hStyle)
 
 		dStyle := document.NewCellStyleBuilder().Border().Build()
@@ -61,17 +71,19 @@ func main() {
 		// Row 1
 		tbl.Row(1).Cell(0).AddParagraph("Project Alpha").Style(dStyle)
 		tbl.Row(1).Cell(1).AddParagraph("Phase 1").Style(dStyle)
-		tbl.Row(1).Cell(2).AddParagraph("John Doe").Style(dStyle)
+		tbl.Row(1).Cell(2).AddList([]string{"Setup environment", "Define architecture"}, true, document.NewCellStyleBuilder().Size(9).Build()).Style(dStyle)
 		tbl.Row(1).Cell(3).AddParagraph("Completed").Style(document.NewCellStyleBuilder().Border().Color("00B050").Build())
 
 		// Row 2 with Vertical span
 		_ = tbl.MergeCells(2, 0, 2, 1)
 		tbl.Row(2).Cell(0).AddParagraph("Project Beta (Ongoing)").Style(dStyle)
-		tbl.Row(2).Cell(2).AddParagraph("Jane Smith").Style(dStyle)
+		tbl.Row(2).Cell(2).AddList([]string{"Implement core API", "Writing tests"}, false, document.NewCellStyleBuilder().Size(9).Build()).Style(dStyle)
 		tbl.Row(2).Cell(3).AddParagraph("In Progress").Style(dStyle)
 
-		tbl.Row(3).Cell(2).AddParagraph("Bob Brown").Style(dStyle)
-		tbl.Row(3).Cell(3).AddParagraph("In Progress").Style(dStyle)
+		tbl.Row(3).Cell(0).AddParagraph("").Style(dStyle)
+		tbl.Row(3).Cell(1).AddParagraph("").Style(dStyle)
+		tbl.Row(3).Cell(2).AddParagraph("Maintenance Work").Style(dStyle)
+		tbl.Row(3).Cell(3).AddParagraph("Ongoing").Style(dStyle)
 
 		// Footer Row
 		_ = tbl.MergeCells(4, 0, 1, 3)

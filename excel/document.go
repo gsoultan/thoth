@@ -13,13 +13,9 @@ import (
 type Document struct {
 	*state
 	lifecycle
-	sheetManager
-	cellProcessor
-	styleManager
+	processor
 	metadata
-	imageProcessor
 	content
-	pageSettings
 }
 
 // Fluent API: Sheet returns a sheet-scoped handle, auto-creating the sheet if needed.
@@ -47,14 +43,42 @@ func (d *Document) SetExportFunc(fn func(doc document.Document, uri string) erro
 	d.exportFunc = fn
 }
 
+func (d *Document) SetPassword(password string) error {
+	if d.workbook == nil {
+		return fmt.Errorf("workbook not initialized")
+	}
+	d.workbook.WorkbookProtection = &xmlstructs.WorkbookProtection{
+		WorkbookPassword: excelPasswordHash(password),
+		LockStructure:    1,
+	}
+	return nil
+}
+
+func (d *Document) SetNamedRange(name, ref string) error {
+	return d.setNamedRange(name, ref)
+}
+
 // NewDocument creates a new instance of an Excel document processor.
 func NewDocument() document.Document {
 	state := &state{
 		sheets:    make(map[string]*xmlstructs.Worksheet),
 		media:     make(map[string][]byte),
 		sheetRels: make(map[string]*xmlstructs.Relationships),
+		drawings:  make(map[string]*xmlstructs.WsDr),
+		tables:    make(map[string]*xmlstructs.Table),
 		workbook: &xmlstructs.Workbook{
 			XMLNS_R: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+			WorkbookPr: &xmlstructs.WorkbookPr{
+				Date1904: 0,
+			},
+			CalcPr: &xmlstructs.CalcPr{
+				FullCalcOnLoad: 1,
+			},
+			WorkbookViews: &xmlstructs.WorkbookViews{
+				Items: []xmlstructs.WorkbookView{
+					{ActiveTab: 0},
+				},
+			},
 		},
 		workbookRels: &xmlstructs.Relationships{},
 		rootRels: &xmlstructs.Relationships{
@@ -66,19 +90,28 @@ func NewDocument() document.Document {
 				},
 			},
 		},
-		contentTypes: xmlstructs.NewContentTypes(),
-		wbRelsPath:   "xl/_rels/workbook.xml.rels",
-		rootRelsPath: "_rels/.rels",
+		contentTypes:       xmlstructs.NewContentTypes(),
+		styles:             xmlstructs.NewDefaultStyles(),
+		wbRelsPath:         "xl/_rels/workbook.xml.rels",
+		rootRelsPath:       "_rels/.rels",
+		sharedStringsIndex: make(map[string]int),
+		fontsIndex:         make(map[string]int),
+		fillsIndex:         make(map[string]int),
+		bordersIndex:       make(map[string]int),
+		xfsIndex:           make(map[string]int),
+		cellCache:          make(map[string]map[string]*xmlstructs.Cell),
 	}
 	return &Document{
-		state:          state,
-		lifecycle:      lifecycle{state},
-		sheetManager:   sheetManager{state},
-		cellProcessor:  cellProcessor{state},
-		styleManager:   styleManager{state},
-		metadata:       metadata{state},
-		imageProcessor: imageProcessor{state},
-		content:        content{state},
-		pageSettings:   pageSettings{state},
+		state:     state,
+		lifecycle: lifecycle{state},
+		processor: processor{
+			state:          state,
+			sheetProcessor: sheetProcessor{state},
+			cellProcessor:  cellProcessor{state},
+			styleProcessor: styleProcessor{state},
+			mediaProcessor: mediaProcessor{state},
+		},
+		metadata: metadata{state},
+		content:  content{state},
 	}
 }

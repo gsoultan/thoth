@@ -2,6 +2,7 @@ package pdf
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gsoultan/thoth/document"
 	"github.com/gsoultan/thoth/pdf/internal/objects"
@@ -36,6 +37,7 @@ func (p *metadata) GetMetadata() (document.Metadata, error) {
 }
 
 func (p *metadata) SetMetadata(metadata document.Metadata) error {
+	p.meta = metadata
 	if p.info == nil {
 		p.info = make(objects.Dictionary)
 	}
@@ -44,5 +46,11 @@ func (p *metadata) SetMetadata(metadata document.Metadata) error {
 	p.info["Subject"] = objects.PDFString(metadata.Subject)
 	p.info["Keywords"] = objects.PDFString(strings.Join(metadata.Keywords, ","))
 	p.info["Description"] = objects.PDFString(metadata.Description)
+	p.info["Creator"] = objects.PDFString("Thoth PDF Engine")
+	p.info["Producer"] = objects.PDFString("Thoth PDF Engine")
+
+	now := time.Now()
+	p.info["CreationDate"] = objects.PDFString(formatPDFDate(now))
+	p.info["ModDate"] = objects.PDFString(formatPDFDate(now))
 	return nil
 }

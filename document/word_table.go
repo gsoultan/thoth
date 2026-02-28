@@ -5,6 +5,8 @@ package document
 type Table interface {
 	Row(index int) Row
 	MergeCells(row, col, rowSpan, colSpan int) Table
+	SetColumnWidths(widths ...float64) Table
+	SetHeaderRows(count int) Table
 	SetStyle(style string) Table
 	Err() error
 }
@@ -18,7 +20,10 @@ type Row interface {
 // TableCell is a fluent handle bound to a specific cell in a table row.
 type TableCell interface {
 	AddParagraph(text string, style ...CellStyle) TableCell
+	AddRichParagraph(spans []TextSpan) TableCell
 	AddImage(path string, width, height float64, style ...CellStyle) TableCell
+	AddList(items []string, ordered bool, style ...CellStyle) TableCell
+	AddTable(rows, cols int) Table
 	Style(style CellStyle) TableCell
 	Err() error
 }

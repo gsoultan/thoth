@@ -16,7 +16,6 @@ type Document struct {
 	processor
 	metadata
 	content
-	pageSettings
 }
 
 func (d *Document) Export(uri string) error {
@@ -34,16 +33,29 @@ func (d *Document) SetExportFunc(fn func(doc document.Document, uri string) erro
 	d.exportFunc = fn
 }
 
+func (d *Document) SetPassword(password string) error {
+	// Word encryption is complex and usually requires a separate library or OLE compound file support.
+	// For production readiness, we acknowledge this but keep it as a placeholder if not yet implemented.
+	return fmt.Errorf("encryption not supported in this version")
+}
+
 // NewDocument creates a new instance of a Word document processor.
 func NewDocument() document.Document {
 	state := &state{
-		media: make(map[string][]byte),
+		media:      make(map[string][]byte),
+		headers:    make(map[string]*xmlstructs.Header),
+		footers:    make(map[string]*xmlstructs.Footer),
+		headerRels: make(map[string]*xmlstructs.Relationships),
+		footerRels: make(map[string]*xmlstructs.Relationships),
 		doc: &xmlstructs.Document{
 			W:   "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
 			R:   "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 			WP:  "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
 			A:   "http://schemas.openxmlformats.org/drawingml/2006/main",
 			Pic: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+			O:   "urn:schemas-microsoft-com:office:office",
+			V:   "urn:schemas-microsoft-com:vml",
+			W10: "urn:schemas-microsoft-com:office:word",
 			Body: xmlstructs.Body{
 				Content: make([]any, 0),
 				SectPr: &xmlstructs.SectPr{
@@ -65,7 +77,22 @@ func NewDocument() document.Document {
 			Creator: "Thoth Go Library",
 		},
 		appProperties: xmlstructs.NewAppProperties(),
-		docRels:       &xmlstructs.Relationships{},
+		styles:        xmlstructs.NewStyles(),
+		settings:      xmlstructs.NewSettings(),
+		docRels: &xmlstructs.Relationships{
+			Rels: []xmlstructs.Relationship{
+				{
+					ID:     "rId1",
+					Type:   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+					Target: "styles.xml",
+				},
+				{
+					ID:     "rId2",
+					Type:   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
+					Target: "settings.xml",
+				},
+			},
+		},
 		rootRels: &xmlstructs.Relationships{
 			Rels: []xmlstructs.Relationship{
 				{
@@ -94,16 +121,17 @@ func NewDocument() document.Document {
 				{PartName: "/word/document.xml", ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"},
 				{PartName: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml"},
 				{PartName: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml"},
+				{PartName: "/word/styles.xml", ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"},
+				{PartName: "/word/settings.xml", ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"},
 			},
 		},
 	}
 	state.xmlDoc = state.doc
 	return &Document{
-		state:        state,
-		lifecycle:    lifecycle{state},
-		processor:    processor{state},
-		metadata:     metadata{state},
-		content:      content{state},
-		pageSettings: pageSettings{state},
+		state:     state,
+		lifecycle: lifecycle{state},
+		processor: processor{state},
+		metadata:  metadata{state},
+		content:   content{state},
 	}
 }

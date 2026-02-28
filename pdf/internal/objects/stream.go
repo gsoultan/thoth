@@ -1,7 +1,7 @@
 package objects
 
 import (
-	"fmt"
+	"bytes"
 	"io"
 )
 
@@ -12,39 +12,48 @@ type Stream struct {
 }
 
 func (s Stream) String() string {
-	if s.Dict == nil {
-		s.Dict = make(Dictionary)
-	}
-	s.Dict["Length"] = Integer(len(s.Data))
-	return fmt.Sprintf("%s\nstream\n%s\nendstream", s.Dict.String(), string(s.Data))
+	// Fallback to WriteTo if possible, but String() should ideally not be used for binary data.
+	var buf bytes.Buffer
+	_, _ = s.WriteTo(&buf)
+	return buf.String()
 }
 
 func (s Stream) WriteTo(w io.Writer) (int64, error) {
+	return s.WriteEncrypted(w, nil, 0, 0)
+}
+
+func (s Stream) WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error) {
 	if s.Dict == nil {
 		s.Dict = make(Dictionary)
 	}
-	s.Dict["Length"] = Integer(len(s.Data))
+
+	data := s.Data
+	if ec != nil {
+		data = ec.Encrypt(s.Data, objNum, objGen)
+	}
+
+	s.Dict["Length"] = Integer(len(data))
 
 	var total int64
-	n64, err := s.Dict.WriteTo(w)
+	n64, err := s.Dict.WriteEncrypted(w, ec, objNum, objGen)
 	total += n64
 	if err != nil {
 		return total, err
 	}
 
-	n, err := fmt.Fprint(w, "\nstream\n")
+	n, err := w.Write([]byte("\nstream\n"))
 	total += int64(n)
 	if err != nil {
 		return total, err
 	}
 
-	n, err = w.Write(s.Data)
+	n, err = w.Write(data)
 	total += int64(n)
 	if err != nil {
 		return total, err
 	}
 
-	n, err = fmt.Fprint(w, "\nendstream")
+	n, err = w.Write([]byte("\nendstream"))
 	total += int64(n)
 	return total, err
 }

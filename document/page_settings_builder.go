@@ -28,6 +28,13 @@ func (b *PageSettingsBuilder) WithMargins(m Margins) *PageSettingsBuilder {
 	return b
 }
 
+// WithColumns sets the number of columns and gap.
+func (b *PageSettingsBuilder) WithColumns(count int, gap float64) *PageSettingsBuilder {
+	b.settings.Columns = count
+	b.settings.ColumnGap = gap
+	return b
+}
+
 // Build returns the constructed PageSettings.
 func (b *PageSettingsBuilder) Build() PageSettings {
 	return b.settings

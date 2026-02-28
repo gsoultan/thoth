@@ -14,3 +14,7 @@ func (n Name) WriteTo(w io.Writer) (int64, error) {
 	m, err := w.Write([]byte(n.String()))
 	return int64(m), err
 }
+
+func (n Name) WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error) {
+	return n.WriteTo(w)
+}

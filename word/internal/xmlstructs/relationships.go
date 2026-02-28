@@ -13,9 +13,10 @@ type Relationships struct {
 
 // Relationship defines a single relationship in a .rels file
 type Relationship struct {
-	ID     string `xml:"Id,attr"`
-	Type   string `xml:"Type,attr"`
-	Target string `xml:"Target,attr"`
+	ID         string `xml:"Id,attr"`
+	Type       string `xml:"Type,attr"`
+	Target     string `xml:"Target,attr"`
+	TargetMode string `xml:"TargetMode,attr,omitempty"`
 }
 
 // TargetByType returns the target of the first relationship of the given type
@@ -30,6 +31,11 @@ func (r *Relationships) TargetByType(relType string) string {
 
 // AddRelationship adds a new relationship and returns its ID
 func (r *Relationships) AddRelationship(relType, target string) string {
+	return r.AddRelationshipMode(relType, target, "")
+}
+
+// AddRelationshipMode adds a new relationship with a specific mode and returns its ID
+func (r *Relationships) AddRelationshipMode(relType, target, mode string) string {
 	maxID := 0
 	for _, rel := range r.Rels {
 		if len(rel.ID) > 3 && rel.ID[:3] == "rId" {
@@ -42,9 +48,10 @@ func (r *Relationships) AddRelationship(relType, target string) string {
 	}
 	newID := fmt.Sprintf("rId%d", maxID+1)
 	r.Rels = append(r.Rels, Relationship{
-		ID:     newID,
-		Type:   relType,
-		Target: target,
+		ID:         newID,
+		Type:       relType,
+		Target:     target,
+		TargetMode: mode,
 	})
 	return newID
 }

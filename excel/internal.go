@@ -6,8 +6,10 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
+	"github.com/gsoultan/thoth/document"
 	"github.com/gsoultan/thoth/excel/internal/xmlstructs"
 )
 
@@ -60,6 +62,9 @@ func (e *state) loadCore(ctx context.Context) error {
 		var ss xmlstructs.SharedStrings
 		if err := e.loadXML(ssPath, &ss); err == nil {
 			e.sharedStrings = &ss
+			for i, si := range ss.SI {
+				e.sharedStringsIndex[si.T] = i
+			}
 		}
 	}
 
@@ -173,4 +178,146 @@ func (e *state) copyFile(f *zip.File, zw *zip.Writer) error {
 
 	_, err = io.Copy(w, rc)
 	return err
+}
+
+func (e *state) GetSheets() ([]string, error) {
+	if e.workbook == nil {
+		return nil, fmt.Errorf("workbook not loaded")
+	}
+	sheets := make([]string, 0, len(e.workbook.Sheets))
+	for _, s := range e.workbook.Sheets {
+		sheets = append(sheets, s.Name)
+	}
+	return sheets, nil
+}
+
+func (e *state) getOrCreateCell(sheet, axis string) (*xmlstructs.Cell, error) {
+	ws, ok := e.sheets[sheet]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", document.ErrSheetNotFound, sheet)
+	}
+
+	rowIdx, err := getRowFromAxis(axis)
+	if err != nil {
+		return nil, err
+	}
+
+	if e.cellCache[sheet] == nil {
+		e.cellCache[sheet] = make(map[string]*xmlstructs.Cell)
+	}
+	if cell, ok := e.cellCache[sheet][axis]; ok {
+		return cell, nil
+	}
+
+	var targetRow *xmlstructs.Row
+	insertIdx := -1
+	for i := range ws.SheetData.Rows {
+		if ws.SheetData.Rows[i].R == rowIdx {
+			targetRow = &ws.SheetData.Rows[i]
+			break
+		}
+		if ws.SheetData.Rows[i].R > rowIdx {
+			insertIdx = i
+			break
+		}
+	}
+
+	if targetRow == nil {
+		newRow := xmlstructs.Row{R: rowIdx}
+		if insertIdx == -1 {
+			ws.SheetData.Rows = append(ws.SheetData.Rows, newRow)
+			targetRow = &ws.SheetData.Rows[len(ws.SheetData.Rows)-1]
+		} else {
+			ws.SheetData.Rows = append(ws.SheetData.Rows[:insertIdx], append([]xmlstructs.Row{newRow}, ws.SheetData.Rows[insertIdx:]...)...)
+			targetRow = &ws.SheetData.Rows[insertIdx]
+		}
+	}
+
+	col := getColumnFromAxis(axis)
+	cellInsertIdx := -1
+	for i := range targetRow.Cells {
+		currCol := getColumnFromAxis(targetRow.Cells[i].R)
+		if targetRow.Cells[i].R == axis {
+			cell := &targetRow.Cells[i]
+			e.cellCache[sheet][axis] = cell
+			return cell, nil
+		}
+		if compareColumns(currCol, col) > 0 {
+			cellInsertIdx = i
+			break
+		}
+	}
+
+	newCell := xmlstructs.Cell{R: axis}
+	if cellInsertIdx == -1 {
+		targetRow.Cells = append(targetRow.Cells, newCell)
+		cell := &targetRow.Cells[len(targetRow.Cells)-1]
+		e.cellCache[sheet][axis] = cell
+		return cell, nil
+	}
+
+	targetRow.Cells = append(targetRow.Cells[:cellInsertIdx], append([]xmlstructs.Cell{newCell}, targetRow.Cells[cellInsertIdx:]...)...)
+	cell := &targetRow.Cells[cellInsertIdx]
+	e.cellCache[sheet][axis] = cell
+	return cell, nil
+}
+
+func (e *state) resolveValue(cell xmlstructs.Cell) string {
+	if cell.IS != nil {
+		if cell.IS.T != "" {
+			return cell.IS.T
+		}
+		var sb strings.Builder
+		for _, r := range cell.IS.R {
+			sb.WriteString(r.T)
+		}
+		return sb.String()
+	}
+	if cell.T == "s" {
+		idx, err := strconv.Atoi(cell.V)
+		if err == nil && e.sharedStrings != nil && idx >= 0 && idx < len(e.sharedStrings.SI) {
+			return e.sharedStrings.SI[idx].T
+		}
+	}
+	return cell.V
+}
+
+func getColumnFromAxis(axis string) string {
+	idx := strings.IndexFunc(axis, func(r rune) bool {
+		return r >= '0' && r <= '9'
+	})
+	if idx == -1 {
+		return axis
+	}
+	return axis[:idx]
+}
+
+func compareColumns(a, b string) int {
+	if len(a) != len(b) {
+		return len(a) - len(b)
+	}
+	return strings.Compare(a, b)
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func getRowFromAxis(axis string) (int, error) {
+	idx := strings.IndexFunc(axis, func(r rune) bool {
+		return r >= '0' && r <= '9'
+	})
+	if idx == -1 || idx == 0 {
+		return 0, fmt.Errorf("invalid axis: %s", axis)
+	}
+	prefix := axis[:idx]
+	for _, r := range prefix {
+		if !((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z')) {
+			return 0, fmt.Errorf("invalid axis prefix: %s", axis)
+		}
+	}
+	return strconv.Atoi(axis[idx:])
 }

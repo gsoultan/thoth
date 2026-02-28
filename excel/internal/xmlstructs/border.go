@@ -1,8 +1,9 @@
 package xmlstructs
 
 type Border struct {
-	Left   *BorderEdge `xml:"left,omitempty"`
-	Right  *BorderEdge `xml:"right,omitempty"`
-	Top    *BorderEdge `xml:"top,omitempty"`
-	Bottom *BorderEdge `xml:"bottom,omitempty"`
+	Left     BorderEdge `xml:"left"`
+	Right    BorderEdge `xml:"right"`
+	Top      BorderEdge `xml:"top"`
+	Bottom   BorderEdge `xml:"bottom"`
+	Diagonal BorderEdge `xml:"diagonal"`
 }

@@ -27,4 +27,23 @@ type state struct {
 	rootRels       *xmlstructs.Relationships
 	media          map[string][]byte
 	sheetRels      map[string]*xmlstructs.Relationships
+	drawings       map[string]*xmlstructs.WsDr
+	tables         map[string]*xmlstructs.Table
+	// Optimization caches
+	sharedStringsIndex map[string]int
+	fontsIndex         map[string]int
+	fillsIndex         map[string]int
+	bordersIndex       map[string]int
+	xfsIndex           map[string]int
+	cellCache          map[string]map[string]*xmlstructs.Cell
+}
+
+func (e *state) processor() *processor {
+	return &processor{
+		state:          e,
+		sheetProcessor: sheetProcessor{e},
+		cellProcessor:  cellProcessor{e},
+		styleProcessor: styleProcessor{e},
+		mediaProcessor: mediaProcessor{e},
+	}
 }

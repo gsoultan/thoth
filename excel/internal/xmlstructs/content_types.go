@@ -45,3 +45,14 @@ func (ct *ContentTypes) AddOverride(partName, contentType string) {
 	}
 	ct.Override = append(ct.Override, Override{PartName: partName, ContentType: contentType})
 }
+
+// AddDefault adds a default content type for an extension if it doesn't already exist.
+func (ct *ContentTypes) AddDefault(extension, contentType string) {
+	for i, d := range ct.Defaults {
+		if d.Extension == extension {
+			ct.Defaults[i].ContentType = contentType
+			return
+		}
+	}
+	ct.Defaults = append(ct.Defaults, Default{Extension: extension, ContentType: contentType})
+}

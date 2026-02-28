@@ -1,11 +1,9 @@
 package excel
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/gsoultan/thoth/document"
-	"github.com/gsoultan/thoth/excel/internal/xmlstructs"
 )
 
 // content handles reading and searching document content.
@@ -30,16 +28,6 @@ func (e *content) ReadContent() (string, error) {
 		}
 	}
 	return strings.TrimSpace(buf.String()), nil
-}
-
-func (e *state) resolveValue(cell xmlstructs.Cell) string {
-	if cell.T == "s" {
-		idx, err := strconv.Atoi(cell.V)
-		if err == nil && e.sharedStrings != nil && idx < len(e.sharedStrings.SI) {
-			return e.sharedStrings.SI[idx].T
-		}
-	}
-	return cell.V
 }
 
 // Search finds keywords in the document.

@@ -16,6 +16,11 @@ type Document struct {
 	content
 	metadata
 	processor
+	renderer
+	textRenderer
+	tableRenderer
+	pageRenderer
+	writeRenderer
 }
 
 func (d *Document) Export(uri string) error {
@@ -23,6 +28,11 @@ func (d *Document) Export(uri string) error {
 		return fmt.Errorf("export function not configured")
 	}
 	return d.exportFunc(d, uri)
+}
+
+func (d *Document) SetPassword(password string) error {
+	d.password = password
+	return nil
 }
 
 func (d *Document) SetContext(ctx context.Context) {
@@ -37,13 +47,19 @@ func (d *Document) SetExportFunc(fn func(doc document.Document, uri string) erro
 func NewDocument() document.Document {
 	state := &state{
 		objects:      make([]objects.Object, 0),
-		contentItems: make([]contentItem, 0),
+		contentItems: make([]*contentItem, 0),
+		fonts:        make(map[string]string),
 	}
 	return &Document{
-		state:     state,
-		lifecycle: lifecycle{state},
-		content:   content{state},
-		metadata:  metadata{state},
-		processor: processor{state},
+		state:         state,
+		lifecycle:     lifecycle{state},
+		content:       content{state},
+		metadata:      metadata{state},
+		processor:     processor{state},
+		renderer:      renderer{state},
+		textRenderer:  textRenderer{state},
+		tableRenderer: tableRenderer{state},
+		pageRenderer:  pageRenderer{state},
+		writeRenderer: writeRenderer{state},
 	}
 }

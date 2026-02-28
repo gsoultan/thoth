@@ -6,6 +6,7 @@ import "encoding/xml"
 type AppProperties struct {
 	XMLName     xml.Name `xml:"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties Properties"`
 	Application string   `xml:"Application,omitempty"`
+	Company     string   `xml:"Company,omitempty"`
 }
 
 // NewAppProperties creates a new instance of AppProperties with standard defaults.

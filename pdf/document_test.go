@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
+	"github.com/gsoultan/thoth/document"
+	"io"
 	"strings"
 	"testing"
 )
@@ -19,8 +21,8 @@ func TestDocument_Save(t *testing.T) {
 	}
 
 	content := buf.String()
-	if !bytes.HasPrefix(buf.Bytes(), []byte("%PDF-1.7")) {
-		t.Errorf("Expected %%PDF-1.7 header, got %s", content)
+	if !bytes.HasPrefix(buf.Bytes(), []byte("%PDF-2.0")) {
+		t.Errorf("Expected %%PDF-2.0 header, got %s", content)
 	}
 }
 
@@ -104,5 +106,61 @@ func TestDocument_FlateDecode(t *testing.T) {
 
 	if !strings.Contains(content, "Hello Flate") {
 		t.Errorf("Expected contentItems to contain 'Hello Flate', got '%s'", content)
+	}
+}
+
+func TestDocument_Highlight(t *testing.T) {
+	doc := NewDocument().(*Document)
+	ctx := t.Context()
+
+	// Add highlighted paragraph
+	_ = doc.AddParagraph("Highlighted Text", document.CellStyle{Background: "FFFF00"})
+
+	var buf bytes.Buffer
+	err := doc.Save(ctx, &buf)
+	if err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	data := buf.Bytes()
+
+	// Find the stream content. Content stream is usually the first long stream.
+	streamMarker := []byte("stream\n")
+	startIdx := bytes.Index(data, streamMarker)
+	if startIdx == -1 {
+		t.Fatalf("No stream found in PDF")
+	}
+	startIdx += len(streamMarker)
+
+	endIdx := bytes.Index(data[startIdx:], []byte("\nendstream"))
+	if endIdx == -1 {
+		t.Fatalf("No endstream found in PDF")
+	}
+	endIdx += startIdx
+
+	compressedData := data[startIdx:endIdx]
+
+	r, err := zlib.NewReader(bytes.NewReader(compressedData))
+	if err != nil {
+		t.Fatalf("Failed to create zlib reader: %v", err)
+	}
+	defer r.Close()
+
+	var decompressed bytes.Buffer
+	_, err = io.Copy(&decompressed, r)
+	if err != nil {
+		// If decompression fails, it might not be the content stream or it might not be compressed.
+		// For this test, it should be compressed.
+		t.Fatalf("Failed to decompress stream: %v", err)
+	}
+
+	content := decompressed.String()
+	// Check for the highlight rectangle command in the PDF
+	// It should look something like: 1.00 1.00 0.00 rg ... re f
+	if !strings.Contains(content, "1.00 1.00 0.00 rg") {
+		t.Errorf("Expected highlight color (yellow: 1.0, 1.0, 0.0), not found in decompressed output: %s", content)
+	}
+	if !strings.Contains(content, "re f") {
+		t.Errorf("Expected rectangle fill command (re f), not found in decompressed output: %s", content)
 	}
 }

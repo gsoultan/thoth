@@ -8,4 +8,5 @@ type Spreadsheet interface {
 
 	// Additional spreadsheet-level ops
 	GetSheets() ([]string, error)
+	SetNamedRange(name, ref string) error
 }

@@ -14,4 +14,5 @@ type Metadata struct {
 	Created     time.Time
 	Modified    time.Time
 	Generator   string
+	Company     string
 }

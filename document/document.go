@@ -31,6 +31,9 @@ type Document interface {
 	// Export saves the document using the configured storage system.
 	Export(uri string) error
 
+	// SetPassword sets the document password for encryption.
+	SetPassword(password string) error
+
 	// Close releases any resources used by the document.
 	Close() error
 }

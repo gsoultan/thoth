@@ -20,6 +20,10 @@ func (d Dictionary) String() string {
 }
 
 func (d Dictionary) WriteTo(w io.Writer) (int64, error) {
+	return d.WriteEncrypted(w, nil, 0, 0)
+}
+
+func (d Dictionary) WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error) {
 	var total int64
 	n, err := w.Write([]byte("<<"))
 	total += int64(n)
@@ -32,10 +36,18 @@ func (d Dictionary) WriteTo(w io.Writer) (int64, error) {
 		if err != nil {
 			return total, err
 		}
-		n64, err := v.WriteTo(w)
-		total += n64
-		if err != nil {
-			return total, err
+		if v == nil {
+			n, err = w.Write([]byte("null"))
+			total += int64(n)
+			if err != nil {
+				return total, err
+			}
+		} else {
+			n64, err := v.WriteEncrypted(w, ec, objNum, objGen)
+			total += n64
+			if err != nil {
+				return total, err
+			}
 		}
 	}
 	n, err = w.Write([]byte(">>"))

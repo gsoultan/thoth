@@ -17,13 +17,17 @@ func (io *IndirectObject) String() string {
 }
 
 func (io *IndirectObject) WriteTo(w io.Writer) (int64, error) {
+	return io.WriteEncrypted(w, nil, 0, 0)
+}
+
+func (io *IndirectObject) WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error) {
 	var total int64
 	n, err := fmt.Fprintf(w, "%d %d obj\n", io.Number, io.Generation)
 	total += int64(n)
 	if err != nil {
 		return total, err
 	}
-	n64, err := io.Data.WriteTo(w)
+	n64, err := io.Data.WriteEncrypted(w, ec, io.Number, io.Generation)
 	total += n64
 	if err != nil {
 		return total, err

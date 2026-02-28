@@ -19,3 +19,7 @@ func (r Reference) WriteTo(w io.Writer) (int64, error) {
 	n, err := fmt.Fprint(w, r.String())
 	return int64(n), err
 }
+
+func (r Reference) WriteEncrypted(w io.Writer, ec *EncryptionContext, objNum, objGen int) (int64, error) {
+	return r.WriteTo(w)
+}
